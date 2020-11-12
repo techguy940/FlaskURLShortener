@@ -1,9 +1,12 @@
 import sqlite3 as sqlite
-from flask import Flask, redirect, request
+from flask import Flask, redirect, request, Response, jsonify
 import random
 import string
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/")
 def home():
@@ -14,13 +17,12 @@ def redirec(i):
 	with sqlite.connect("main.db") as db:
 		long_url = db.execute("SELECT long FROM URLs WHERE short=?", (i,))
 		long_url = long_url.fetchone()
-	print(long_url)
 	if long_url:
 		return redirect(long_url[0], code=301)
 	else:
 		return {"data": "Not Found"}
 
-@app.route("/shorten")
+@app.route("/shorten", methods=["POST", "GET"])
 def shorten():
 	url = request.args.get("url")
 	if url:
@@ -28,7 +30,7 @@ def shorten():
 			data = db.execute("SELECT short FROM URLs WHERE long=?", (url,)).fetchone()
 			if data:
 				print(data)
-				return {"url": f"http://localhost:5000/{data[0]}"}
+				return {"url": f"{request.url_root}{data[0]}"}
 
 	r = "".join([random.choice(string.ascii_letters) for _ in range(6)])
 	inside = True
@@ -43,8 +45,9 @@ def shorten():
 	if url:
 		with sqlite.connect("main.db") as db:
 			temp = db.execute("INSERT INTO URLs (short, long) VALUES (?, ?)", (r, url))
-		return {"url": f"http://localhost:5000/{r}"}
+		r = {"url": f"http://localhost:5000/{r}"}
+		return jsonify(r)
 	else:
-		return {"data": "URL Missing"}
+		return jsonify({"data": "URL Missing"})
 
 app.run(port=5000)
