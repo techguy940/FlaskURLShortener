@@ -45,7 +45,7 @@ def shorten():
 	if url:
 		with sqlite.connect("main.db") as db:
 			temp = db.execute("INSERT INTO URLs (short, long) VALUES (?, ?)", (r, url))
-		r = {"url": f"http://localhost:5000/{r}"}
+		r = {"url": f"{request.url_root}{r}"}
 		return jsonify(r)
 	else:
 		return jsonify({"data": "URL Missing"})
